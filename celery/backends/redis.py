@@ -476,6 +476,13 @@ class RedisBackend(KeyValueStoreBackend):
     #: Default timeout waiting for a cache lock before set operation.
     set_lock_timeout = 0.5
 
+    retry_policy = {
+        'max_retries': 5,
+        'interval_start': 0,
+        'interval_step': 1,
+        'interval_max': 1,
+    }
+
     def __init__(self, host=None, port=None, db=None, password=None,
                  expires=None, max_connections=None, url=None,
                  connection_pool=None, new_join=False, lock_ttl=None,

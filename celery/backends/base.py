@@ -251,10 +251,19 @@ class BaseBackend(object):
     def store_result(self, task_id, result, status,
                      traceback=None, request=None, **kwargs):
         """Update task state and result."""
-        result = self.encode_result(result, status)
-        self._store_result(task_id, result, status, traceback,
+        try:
+            result = self.encode_result(result, status)
+            self._store_result(task_id, result, status, traceback,
                            request=request, **kwargs)
-        return result
+            return result
+        except Exception as eb_exc:
+            # try marking task as failed when encountering a backend error due to, e.g.
+            # some issue with encoding or writing of the result.
+            # if result is not the exact same exception we're trying to write a second time
+            # then try marking task as failed in the backend, otherwise, give up
+            if not isinstance(result, Exception) or result != eb_exc:
+                self.fail_from_current_stack(task_id, exc=eb_exc)
+            raise
 
     def forget(self, task_id):
         self._cache.pop(task_id, None)
